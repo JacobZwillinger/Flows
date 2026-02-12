@@ -73,7 +73,6 @@ export default function App() {
           <ScheduleViewer
             day={selectedDay}
             assignments={filteredAssignments}
-            categories={data.categories}
             selectedAssignmentId={selectedAssignmentId}
             onSelectAssignment={setSelectedAssignmentId}
           />

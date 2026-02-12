@@ -45,7 +45,6 @@ export default function Timeline({
 
   const hourMarks = useMemo(() => generateHourMarks(dayStart, dayEnd), [dayStart, dayEnd]);
 
-  const svgHeight = headerHeight + assignments.length * rowHeight;
 
   const baseXScale = useMemo(
     () => scaleTime().domain([dayStart, dayEnd]).range([0, containerWidth]),

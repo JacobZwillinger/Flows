@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Day, Assignment, Category } from '../types';
+import { Day, Assignment } from '../types';
 import Timeline from './Timeline';
 import Tooltip from './Tooltip';
 
 interface ScheduleViewerProps {
   day: Day;
   assignments: Assignment[];
-  categories: Category[];
+
   selectedAssignmentId: string | null;
   onSelectAssignment: (id: string | null) => void;
 }
@@ -17,7 +17,6 @@ const HEADER_HEIGHT = 30;
 export default function ScheduleViewer({
   day,
   assignments,
-  categories,
   selectedAssignmentId,
   onSelectAssignment,
 }: ScheduleViewerProps) {
