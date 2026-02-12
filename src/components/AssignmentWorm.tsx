@@ -56,7 +56,7 @@ export default function AssignmentWorm({
         y={y}
         width={effectiveWidth}
         height={height}
-        rx={6}
+        rx={Math.min(6, height / 2)}
         fill={color}
         stroke={isSelected ? '#fff' : 'none'}
         strokeWidth={isSelected ? 2 : 0}

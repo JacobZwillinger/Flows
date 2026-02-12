@@ -263,9 +263,9 @@ export default function Timeline({
           const startX = xScale(new Date(assignment.start));
           const endX = xScale(new Date(assignment.end));
           const w = endX - startX;
-          const padding = previewMode ? 1 : 4;
+          const padding = previewMode ? 0 : 4;
           const y = idx * rowHeight + padding;
-          const h = rowHeight - padding * 2;
+          const h = Math.max(0.5, rowHeight - padding * 2);
 
           return (
             <AssignmentWorm
