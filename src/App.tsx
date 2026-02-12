@@ -11,6 +11,7 @@ export default function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
     import('./data/mockData.json').then((mod) => {
@@ -66,6 +67,8 @@ export default function App() {
         }}
         onCategoryChange={setSelectedCategoryId}
         onSearchChange={setSearchQuery}
+        previewMode={previewMode}
+        onTogglePreview={() => setPreviewMode((p) => !p)}
       />
 
       <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -75,6 +78,8 @@ export default function App() {
             assignments={filteredAssignments}
             selectedAssignmentId={selectedAssignmentId}
             onSelectAssignment={setSelectedAssignmentId}
+            previewMode={previewMode}
+            onExitPreview={() => setPreviewMode(false)}
           />
         ) : (
           <div style={{ padding: 24, color: '#999' }}>Select a day to view the schedule.</div>

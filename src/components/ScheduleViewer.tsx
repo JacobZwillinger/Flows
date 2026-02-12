@@ -6,12 +6,14 @@ import Tooltip from './Tooltip';
 interface ScheduleViewerProps {
   day: Day;
   assignments: Assignment[];
-
   selectedAssignmentId: string | null;
   onSelectAssignment: (id: string | null) => void;
+  previewMode: boolean;
+  onExitPreview: () => void;
 }
 
 const ROW_HEIGHT = 40;
+const PREVIEW_ROW_HEIGHT = 6;
 const HEADER_HEIGHT = 30;
 
 export default function ScheduleViewer({
@@ -19,6 +21,8 @@ export default function ScheduleViewer({
   assignments,
   selectedAssignmentId,
   onSelectAssignment,
+  previewMode,
+  onExitPreview,
 }: ScheduleViewerProps) {
   const [tooltip, setTooltip] = useState<{
     assignmentId: string;
@@ -59,6 +63,7 @@ export default function ScheduleViewer({
     ? assignments.find((a) => a.assignmentId === tooltip.assignmentId) ?? null
     : null;
 
+  const effectiveRowHeight = previewMode ? PREVIEW_ROW_HEIGHT : ROW_HEIGHT;
   const workerScrollOffset = Math.max(0, scrollTop - HEADER_HEIGHT);
 
   return (
@@ -71,7 +76,7 @@ export default function ScheduleViewer({
         <Timeline
           day={day}
           assignments={assignments}
-          rowHeight={ROW_HEIGHT}
+          rowHeight={effectiveRowHeight}
           headerHeight={HEADER_HEIGHT}
           selectedAssignmentId={selectedAssignmentId}
           onSelectAssignment={onSelectAssignment}
@@ -79,6 +84,8 @@ export default function ScheduleViewer({
           onTooltipHide={handleTooltipHide}
           scrollTop={workerScrollOffset}
           viewportHeight={viewportHeight}
+          previewMode={previewMode}
+          onExitPreview={onExitPreview}
         />
       </div>
 

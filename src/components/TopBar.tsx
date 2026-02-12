@@ -1,5 +1,6 @@
 import { Day, Category } from '../types';
-import { Select, MenuItem, TextField, InputLabel, FormControl, Box } from '@mui/material';
+import { Select, MenuItem, TextField, InputLabel, FormControl, Box, Button } from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
 interface TopBarProps {
   days: Day[];
@@ -10,6 +11,8 @@ interface TopBarProps {
   onDayChange: (dayId: string) => void;
   onCategoryChange: (categoryId: string | null) => void;
   onSearchChange: (query: string) => void;
+  previewMode: boolean;
+  onTogglePreview: () => void;
 }
 
 export function TopBar({
@@ -21,6 +24,8 @@ export function TopBar({
   onDayChange,
   onCategoryChange,
   onSearchChange,
+  previewMode,
+  onTogglePreview,
 }: TopBarProps) {
   return (
     <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
@@ -62,6 +67,16 @@ export function TopBar({
         onChange={(e) => onSearchChange(e.target.value)}
         sx={{ minWidth: 200 }}
       />
+
+      <Button
+        size="small"
+        variant={previewMode ? 'contained' : 'outlined'}
+        startIcon={<VisibilityIcon />}
+        onClick={onTogglePreview}
+        sx={{ whiteSpace: 'nowrap' }}
+      >
+        {previewMode ? 'Exit Preview' : 'Day Overview'}
+      </Button>
     </Box>
   );
 }

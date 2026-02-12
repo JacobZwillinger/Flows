@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { scaleTime } from 'd3-scale';
 import { zoom as d3zoom, zoomIdentity } from 'd3-zoom';
 import { select } from 'd3-selection';
@@ -17,6 +17,8 @@ interface TimelineProps {
   onTooltipHide: () => void;
   scrollTop: number;
   viewportHeight: number;
+  previewMode: boolean;
+  onExitPreview: () => void;
 }
 
 export default function Timeline({
@@ -30,9 +32,16 @@ export default function Timeline({
   onTooltipHide,
   scrollTop,
   viewportHeight,
+  previewMode,
+  onExitPreview,
 }: TimelineProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const zoomBehaviorRef = useRef<ReturnType<typeof d3zoom<SVGSVGElement, unknown>> | null>(null);
+  const previewRef = useRef(previewMode);
+  previewRef.current = previewMode;
+  const onExitPreviewRef = useRef(onExitPreview);
+  onExitPreviewRef.current = onExitPreview;
   const [containerWidth, setContainerWidth] = useState(800);
   const [transform, setTransform] = useState({ k: 1, x: 0 });
 
@@ -98,15 +107,25 @@ export default function Timeline({
         return true;
       })
       .on('zoom', (event) => {
+        if (previewRef.current && event.sourceEvent) {
+          onExitPreviewRef.current();
+          return;
+        }
         setTransform({ k: event.transform.k, x: event.transform.x });
       });
 
+    zoomBehaviorRef.current = zoomBehavior;
     svg.call(zoomBehavior as any);
 
     // Handle wheel events: ctrl+wheel = zoom (prevent browser zoom),
     // shift+wheel or horizontal deltaX = horizontal pan
     const svgEl = svgRef.current;
     const wheelHandler = (event: WheelEvent) => {
+      if (previewRef.current) {
+        event.preventDefault();
+        onExitPreviewRef.current();
+        return;
+      }
       if (event.ctrlKey) {
         event.preventDefault();
         return;
@@ -128,6 +147,22 @@ export default function Timeline({
       svgEl.removeEventListener('wheel', wheelHandler);
     };
   }, [maxScale, containerWidth]);
+
+  // Reset zoom to identity when entering preview mode
+  useEffect(() => {
+    if (previewMode && svgRef.current && zoomBehaviorRef.current) {
+      const svg = select(svgRef.current);
+      svg.call(zoomBehaviorRef.current.transform as any, zoomIdentity);
+    }
+  }, [previewMode]);
+
+  // Wrap onSelectAssignment to exit preview on worm click
+  const handleSelectAssignment = useCallback((id: string | null) => {
+    if (previewMode) {
+      onExitPreview();
+    }
+    onSelectAssignment(id);
+  }, [previewMode, onExitPreview, onSelectAssignment]);
 
   // Virtualization using parent-provided scrollTop/viewportHeight
   const buffer = 5;
@@ -203,7 +238,7 @@ export default function Timeline({
           width={containerWidth}
           height={assignments.length * rowHeight}
           fill="#1e1e1e"
-          onClick={() => onSelectAssignment(null)}
+          onClick={() => handleSelectAssignment(null)}
         />
 
         {/* Hour gridlines (full height) */}
@@ -228,8 +263,9 @@ export default function Timeline({
           const startX = xScale(new Date(assignment.start));
           const endX = xScale(new Date(assignment.end));
           const w = endX - startX;
-          const y = idx * rowHeight + 4;
-          const h = rowHeight - 8;
+          const padding = previewMode ? 1 : 4;
+          const y = idx * rowHeight + padding;
+          const h = rowHeight - padding * 2;
 
           return (
             <AssignmentWorm
@@ -241,7 +277,7 @@ export default function Timeline({
               isSelected={assignment.assignmentId === selectedAssignmentId}
               color="#4A90E2"
               label={assignment.workerDisplay}
-              onClick={() => onSelectAssignment(assignment.assignmentId)}
+              onClick={() => handleSelectAssignment(assignment.assignmentId)}
               onMouseEnter={(event) => {
                 const rect = (event.target as SVGRectElement).getBoundingClientRect();
                 onTooltipShow(assignment.assignmentId, rect.left + rect.width / 2, rect.top - 10);
