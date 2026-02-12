@@ -13,7 +13,6 @@ interface ScheduleViewerProps {
 }
 
 const ROW_HEIGHT = 40;
-const PREVIEW_ROW_HEIGHT = 6;
 const HEADER_HEIGHT = 30;
 
 export default function ScheduleViewer({
@@ -63,7 +62,10 @@ export default function ScheduleViewer({
     ? assignments.find((a) => a.assignmentId === tooltip.assignmentId) ?? null
     : null;
 
-  const effectiveRowHeight = previewMode ? PREVIEW_ROW_HEIGHT : ROW_HEIGHT;
+  const previewRowHeight = assignments.length > 0
+    ? Math.max(1, (viewportHeight - HEADER_HEIGHT) / assignments.length)
+    : 6;
+  const effectiveRowHeight = previewMode ? previewRowHeight : ROW_HEIGHT;
   const workerScrollOffset = Math.max(0, scrollTop - HEADER_HEIGHT);
 
   return (

@@ -29,7 +29,7 @@ export default function AssignmentWorm({
   const effectiveWidth = Math.max(width, minWidth);
   const clipId = useId();
   const textPadding = 6;
-  const showLabel = effectiveWidth > 20;
+  const showLabel = effectiveWidth > 20 && height > 12;
 
   return (
     <g
