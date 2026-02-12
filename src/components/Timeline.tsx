@@ -103,17 +103,29 @@ export default function Timeline({
 
     svg.call(zoomBehavior as any);
 
-    // Prevent default on ctrl+wheel to stop browser zoom
+    // Handle wheel events: ctrl+wheel = zoom (prevent browser zoom),
+    // shift+wheel or horizontal deltaX = horizontal pan
+    const svgEl = svgRef.current;
     const wheelHandler = (event: WheelEvent) => {
       if (event.ctrlKey) {
         event.preventDefault();
+        return;
+      }
+      // Horizontal scroll: shift+wheel or native horizontal scroll (deltaX)
+      const deltaX = event.shiftKey ? event.deltaY : event.deltaX;
+      if (deltaX !== 0) {
+        event.preventDefault();
+        const currentTransform = select(svgEl).property('__zoom') || zoomIdentity;
+        const newX = currentTransform.x - deltaX;
+        const newTransform = zoomIdentity.translate(newX, 0).scale(currentTransform.k);
+        svg.call(zoomBehavior.transform as any, newTransform);
       }
     };
-    svgRef.current.addEventListener('wheel', wheelHandler, { passive: false });
+    svgEl.addEventListener('wheel', wheelHandler, { passive: false });
 
     return () => {
       svg.on('.zoom', null);
-      svgRef.current?.removeEventListener('wheel', wheelHandler);
+      svgEl.removeEventListener('wheel', wheelHandler);
     };
   }, [maxScale, containerWidth]);
 

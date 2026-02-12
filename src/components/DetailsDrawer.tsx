@@ -43,8 +43,10 @@ export const DetailsDrawer: React.FC<DetailsDrawerProps> = ({
   return (
     <Drawer
       anchor="right"
+      variant="persistent"
       open={open}
       onClose={onClose}
+      sx={{ '& .MuiDrawer-paper': { position: 'absolute' } }}
     >
       <Box sx={{ width: 400, p: 3 }}>
         {/* Header */}
