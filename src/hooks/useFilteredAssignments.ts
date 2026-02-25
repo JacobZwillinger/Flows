@@ -21,16 +21,11 @@ export function useFilteredAssignments(
         return false;
       }
 
-      // Filter by search query (case-insensitive)
+      // Filter by search query — matches callsign or mission number
       if (trimmedQuery) {
-        const matchesWorkerDisplay = assignment.workerDisplay.toLowerCase().includes(trimmedQuery);
-        const matchesWorkerId = assignment.workerId.toLowerCase().includes(trimmedQuery);
-        const matchesTitle = assignment.title.toLowerCase().includes(trimmedQuery);
-        const matchesWorkOrder = assignment.drawer.workOrder.toLowerCase().includes(trimmedQuery);
-
-        if (!matchesWorkerDisplay && !matchesWorkerId && !matchesTitle && !matchesWorkOrder) {
-          return false;
-        }
+        const matchesCallsign = assignment.callsign.toLowerCase().includes(trimmedQuery);
+        const matchesMissionNumber = String(assignment.missionNumber).includes(trimmedQuery);
+        if (!matchesCallsign && !matchesMissionNumber) return false;
       }
 
       return true;

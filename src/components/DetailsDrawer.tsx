@@ -5,6 +5,7 @@ import {
   Typography,
   Divider,
   IconButton,
+  Chip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { Assignment, Category } from '../types';
@@ -17,28 +18,39 @@ interface DetailsDrawerProps {
   onClose: () => void;
 }
 
+function getStatusColor(status: string): string {
+  switch (status) {
+    case 'OK': return '#4CAF50';
+    case 'AT RISK': return '#FF9800';
+    case 'DEGRADED': return '#F44336';
+    default: return '#9E9E9E';
+  }
+}
+
+function getTypeColor(catName: string): string {
+  switch (catName) {
+    case 'Tanker': return '#5B9BD5';
+    case 'Strike': return '#E07B39';
+    case 'CAP':    return '#4CAF7D';
+    default:       return '#9E9E9E';
+  }
+}
+
 export const DetailsDrawer: React.FC<DetailsDrawerProps> = ({
   open,
   assignment,
   categories,
   onClose,
 }) => {
-  if (!assignment) {
-    return null;
-  }
+  if (!assignment) return null;
 
   const category = categories.find(c => c.categoryId === assignment.categoryId);
+  const catName = category?.name ?? 'Unknown';
   const startFormatted = formatHHMMSS(new Date(assignment.start));
   const endFormatted = formatHHMMSS(new Date(assignment.end));
   const duration = formatDuration(assignment.start, assignment.end);
-
-  const getRiskColor = (risk: string): string => {
-    const lowerRisk = risk.toLowerCase();
-    if (lowerRisk.includes('high')) return '#d32f2f';
-    if (lowerRisk.includes('medium')) return '#f57c00';
-    if (lowerRisk.includes('low')) return '#388e3c';
-    return 'inherit';
-  };
+  const statusColor = getStatusColor(assignment.status);
+  const typeColor = getTypeColor(catName);
 
   return (
     <Drawer
@@ -48,107 +60,100 @@ export const DetailsDrawer: React.FC<DetailsDrawerProps> = ({
       onClose={onClose}
       sx={{ '& .MuiDrawer-paper': { position: 'absolute' } }}
     >
-      <Box sx={{ width: 400, p: 3 }}>
+      <Box sx={{ width: 340, p: 3 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 'bold', flex: 1 }}>
-            {assignment.title}
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 800, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+              {assignment.missionNumber}
+            </Typography>
+            <Typography
+              variant="h6"
+              sx={{ fontFamily: 'monospace', color: '#bbb', mt: 0.5, letterSpacing: '0.05em' }}
+            >
+              {assignment.callsign}
+            </Typography>
+          </Box>
           <IconButton onClick={onClose} edge="end">
             <CloseIcon />
           </IconButton>
         </Box>
 
-        {/* Assignment Details */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Worker
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {assignment.workerDisplay}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Category
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {category?.name || 'Unknown'}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Start
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {startFormatted}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            End
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {endFormatted}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Duration
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {duration}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Status
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {assignment.status}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Location
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {assignment.location}
-          </Typography>
-        </Box>
-
-        <Divider sx={{ my: 3 }} />
-
-        {/* Drawer Details */}
-        <Box>
-          <Typography variant="body2" color="text.secondary">
-            Work Order
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {assignment.drawer.workOrder}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Supervisor
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {assignment.drawer.supervisor}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Notes
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {assignment.drawer.notes}
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary">
-            Risk
-          </Typography>
-          <Typography
-            variant="body1"
+        {/* Type + Status chips */}
+        <Box sx={{ display: 'flex', gap: 1, mb: 3 }}>
+          <Chip
+            label={catName.toUpperCase()}
+            size="small"
             sx={{
-              color: getRiskColor(assignment.drawer.risk),
-              fontWeight: 'medium',
+              color: typeColor,
+              border: `1px solid ${typeColor}`,
+              backgroundColor: 'transparent',
+              fontWeight: 700,
+              fontSize: 11,
+              letterSpacing: '0.06em',
             }}
-          >
-            {assignment.drawer.risk}
-          </Typography>
+          />
+          <Chip
+            label={assignment.status}
+            size="small"
+            sx={{
+              color: statusColor,
+              border: `1px solid ${statusColor}`,
+              backgroundColor: 'transparent',
+              fontWeight: 700,
+              fontSize: 11,
+            }}
+          />
         </Box>
+
+        <Divider sx={{ mb: 2 }} />
+
+        {/* Time details */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+          <Box>
+            <Typography variant="body2" color="text.secondary">On Station</Typography>
+            <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{startFormatted}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">Off Station</Typography>
+            <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{endFormatted}</Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">Duration</Typography>
+            <Typography variant="body1">{duration}</Typography>
+          </Box>
+        </Box>
+
+        {/* Events */}
+        {assignment.events.length > 0 && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Events</Typography>
+            {assignment.events.map((ev, i) => {
+              const evColor =
+                ev.type === 'on-station' ? '#FFD700' :
+                ev.type === 'refuel-tanker' ? '#4ADE80' :
+                ev.type === 'refuel-receiver' ? '#FACC15' :
+                '#EF4444';
+              const evLabel =
+                ev.type === 'on-station' ? 'On Station' :
+                ev.type === 'refuel-tanker' ? 'Refuel (Tanker)' :
+                ev.type === 'refuel-receiver' ? 'Refuel (Receiver)' :
+                'Strike';
+              return (
+                <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.75 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: evColor, flexShrink: 0 }} />
+                  <Typography variant="body2" sx={{ color: evColor, fontWeight: 600, minWidth: 120 }}>
+                    {evLabel}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontFamily: 'monospace', color: '#aaa' }}>
+                    {formatHHMMSS(new Date(ev.time))}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </>
+        )}
       </Box>
     </Drawer>
   );

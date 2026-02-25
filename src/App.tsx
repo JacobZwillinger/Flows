@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MockData } from './types';
-import { TopBar } from './components/TopBar';
+import { TopBar, ViewMode } from './components/TopBar';
 import ScheduleViewer from './components/ScheduleViewer';
 import { DetailsDrawer } from './components/DetailsDrawer';
 import { useFilteredAssignments } from './hooks/useFilteredAssignments';
@@ -11,7 +11,7 @@ export default function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
-  const [previewMode, setPreviewMode] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('default');
 
   useEffect(() => {
     import('./data/mockData.json').then((mod) => {
@@ -53,6 +53,10 @@ export default function App() {
     ? data.assignments.find((a) => a.assignmentId === selectedAssignmentId) ?? null
     : null;
 
+  const handleSetViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: '#121212', color: '#fff' }}>
       <TopBar
@@ -67,8 +71,8 @@ export default function App() {
         }}
         onCategoryChange={setSelectedCategoryId}
         onSearchChange={setSearchQuery}
-        previewMode={previewMode}
-        onTogglePreview={() => setPreviewMode((p) => !p)}
+        viewMode={viewMode}
+        onSetViewMode={handleSetViewMode}
       />
 
       <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -76,10 +80,13 @@ export default function App() {
           <ScheduleViewer
             day={selectedDay}
             assignments={filteredAssignments}
+            allAssignments={data.assignments}
+            categories={data.categories}
             selectedAssignmentId={selectedAssignmentId}
             onSelectAssignment={setSelectedAssignmentId}
-            previewMode={previewMode}
-            onExitPreview={() => setPreviewMode(false)}
+            previewMode={viewMode === 'preview'}
+            cellOverview={viewMode === 'cell'}
+            onExitPreview={() => setViewMode('default')}
           />
         ) : (
           <div style={{ padding: 24, color: '#999' }}>Select a day to view the schedule.</div>

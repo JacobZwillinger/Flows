@@ -4,16 +4,20 @@ import { zoom as d3zoom, zoomIdentity } from 'd3-zoom';
 import { select } from 'd3-selection';
 import { Day, Assignment } from '../types';
 import { formatHHMMSS, generateHourMarks } from '../utils/timeUtils';
+import { shortCallsign } from '../utils/missionUtils';
 import AssignmentWorm from './AssignmentWorm';
+
+const WORM_BLUE = '#3B82F6';
 
 interface TimelineProps {
   day: Day;
   assignments: Assignment[];
   rowHeight: number;
   headerHeight: number;
+  cellOverview: boolean;
   selectedAssignmentId: string | null;
   onSelectAssignment: (id: string | null) => void;
-  onTooltipShow: (assignmentId: string, x: number, y: number) => void;
+  onTooltipShow: (assignmentId: string, x: number, y: number, eventIndex?: number) => void;
   onTooltipHide: () => void;
   scrollTop: number;
   viewportHeight: number;
@@ -26,6 +30,7 @@ export default function Timeline({
   assignments,
   rowHeight,
   headerHeight,
+  cellOverview,
   selectedAssignmentId,
   onSelectAssignment,
   onTooltipShow,
@@ -54,7 +59,6 @@ export default function Timeline({
 
   const hourMarks = useMemo(() => generateHourMarks(dayStart, dayEnd), [dayStart, dayEnd]);
 
-
   const baseXScale = useMemo(
     () => scaleTime().domain([dayStart, dayEnd]).range([0, containerWidth]),
     [dayStart, dayEnd, containerWidth]
@@ -82,7 +86,7 @@ export default function Timeline({
     return () => observer.disconnect();
   }, []);
 
-  // d3-zoom setup — only zoom on ctrl+wheel or pinch, drag to pan horizontally
+  // d3-zoom setup
   useEffect(() => {
     if (!svgRef.current) return;
 
@@ -92,17 +96,14 @@ export default function Timeline({
       .scaleExtent([1, maxScale])
       .translateExtent([[0, -Infinity], [containerWidth, Infinity]])
       .filter((event: Event) => {
-        // Only zoom on ctrl+wheel (pinch triggers ctrlKey on trackpad)
         if (event.type === 'wheel') {
           return (event as WheelEvent).ctrlKey;
         }
-        // Drag to pan — but not from worm clicks
         if (event.type === 'mousedown') {
           const target = event.target as SVGElement;
           if (target.getAttribute('data-worm') || target.closest('[data-worm]')) return false;
           return true;
         }
-        // Block double-click zoom
         if (event.type === 'dblclick') return false;
         return true;
       })
@@ -117,8 +118,6 @@ export default function Timeline({
     zoomBehaviorRef.current = zoomBehavior;
     svg.call(zoomBehavior as any);
 
-    // Handle wheel events: ctrl+wheel = zoom (prevent browser zoom),
-    // shift+wheel or horizontal deltaX = horizontal pan
     const svgEl = svgRef.current;
     const wheelHandler = (event: WheelEvent) => {
       if (previewRef.current) {
@@ -130,7 +129,6 @@ export default function Timeline({
         event.preventDefault();
         return;
       }
-      // Horizontal scroll: shift+wheel or native horizontal scroll (deltaX)
       const deltaX = event.shiftKey ? event.deltaY : event.deltaX;
       if (deltaX !== 0) {
         event.preventDefault();
@@ -148,7 +146,7 @@ export default function Timeline({
     };
   }, [maxScale, containerWidth]);
 
-  // Reset zoom to identity when entering preview mode
+  // Reset zoom when entering preview mode
   useEffect(() => {
     if (previewMode && svgRef.current && zoomBehaviorRef.current) {
       const svg = select(svgRef.current);
@@ -156,7 +154,6 @@ export default function Timeline({
     }
   }, [previewMode]);
 
-  // Wrap onSelectAssignment to exit preview on worm click
   const handleSelectAssignment = useCallback((id: string | null) => {
     if (previewMode) {
       onExitPreview();
@@ -164,7 +161,7 @@ export default function Timeline({
     onSelectAssignment(id);
   }, [previewMode, onExitPreview, onSelectAssignment]);
 
-  // Virtualization using parent-provided scrollTop/viewportHeight
+  // Virtualization
   const buffer = 5;
   const startRow = Math.max(0, Math.floor(scrollTop / rowHeight) - buffer);
   const endRow = Math.min(
@@ -178,7 +175,7 @@ export default function Timeline({
       ref={containerRef}
       style={{ width: '100%', position: 'relative' }}
     >
-      {/* Sticky header overlay for tick labels */}
+      {/* Sticky header overlay */}
       <div
         style={{
           position: 'sticky',
@@ -191,34 +188,16 @@ export default function Timeline({
         }}
       >
         <svg width={containerWidth} height={headerHeight} style={{ display: 'block' }}>
-          {/* Hour gridline tops in header */}
           {hourMarks.map((hourMark, i) => {
-            const x = xScale(hourMark);
+            const hx = xScale(hourMark);
             return (
-              <line
-                key={i}
-                x1={x}
-                y1={0}
-                x2={x}
-                y2={headerHeight}
-                stroke="#333"
-                strokeWidth={1}
-              />
+              <line key={i} x1={hx} y1={0} x2={hx} y2={headerHeight} stroke="#333" strokeWidth={1} />
             );
           })}
-          {/* Hour tick labels */}
           {hourMarks.map((hourMark, i) => {
-            const x = xScale(hourMark);
+            const hx = xScale(hourMark);
             return (
-              <text
-                key={i}
-                x={x}
-                y={20}
-                fill="#999"
-                fontSize={11}
-                textAnchor="middle"
-                style={{ userSelect: 'none' }}
-              >
+              <text key={i} x={hx} y={20} fill="#999" fontSize={11} textAnchor="middle" style={{ userSelect: 'none' }}>
                 {formatHHMMSS(hourMark)}
               </text>
             );
@@ -226,14 +205,13 @@ export default function Timeline({
         </svg>
       </div>
 
-      {/* Main SVG — contains gridlines and worms */}
+      {/* Main SVG */}
       <svg
         ref={svgRef}
         width={containerWidth}
         height={assignments.length * rowHeight}
         style={{ display: 'block' }}
       >
-        {/* Background */}
         <rect
           width={containerWidth}
           height={assignments.length * rowHeight}
@@ -241,46 +219,71 @@ export default function Timeline({
           onClick={() => handleSelectAssignment(null)}
         />
 
-        {/* Hour gridlines (full height) */}
+        {/* Hour gridlines */}
         {hourMarks.map((hourMark, i) => {
-          const x = xScale(hourMark);
+          const hx = xScale(hourMark);
           return (
             <line
               key={i}
-              x1={x}
-              y1={0}
-              x2={x}
-              y2={assignments.length * rowHeight}
-              stroke="#333"
-              strokeWidth={1}
+              x1={hx} y1={0} x2={hx} y2={assignments.length * rowHeight}
+              stroke="#282828" strokeWidth={1}
             />
           );
         })}
 
-        {/* Assignment worms (virtualized) */}
+        {/* Assignment worms */}
         {visibleAssignments.map((assignment, relIdx) => {
           const idx = startRow + relIdx;
+          const isDayOverview = previewMode;
           const startX = xScale(new Date(assignment.start));
           const endX = xScale(new Date(assignment.end));
           const w = endX - startX;
-          const padding = previewMode ? 0 : 4;
-          const y = idx * rowHeight + padding;
-          const h = Math.max(0.5, rowHeight - padding * 2);
+          const rowTop = idx * rowHeight;
+          const h = previewMode
+            ? Math.max(0.5, rowHeight)
+            : cellOverview
+            ? Math.max(0.5, rowHeight - 8)
+            : Math.max(0.5, rowHeight);
+          const wy = previewMode
+            ? rowTop
+            : cellOverview
+            ? rowTop + 4
+            : rowTop;
+          const color = WORM_BLUE;
+
+          const sourceEvents = isDayOverview
+            ? (assignment.events ?? []).filter((ev) => ev.type === 'on-station')
+            : (assignment.events ?? []);
+
+          const eventPositions = sourceEvents.map((ev, index) => ({
+            x: xScale(new Date(ev.time)),
+            endX: ev.endTime ? xScale(new Date(ev.endTime)) : undefined,
+            type: ev.type,
+            fuelLbs: ev.fuelLbs,
+            linkedAssignmentId: ev.linkedAssignmentId,
+            dmpiCount: ev.dmpiCount,
+            eventIndex: index,
+          }));
+
+          const label = `${assignment.missionNumber} ${shortCallsign(assignment.callsign)}`;
 
           return (
             <AssignmentWorm
               key={assignment.assignmentId}
               x={startX}
-              y={y}
+              y={wy}
               width={w}
               height={h}
               isSelected={assignment.assignmentId === selectedAssignmentId}
-              color="#4A90E2"
-              label={assignment.workerDisplay}
+              color={color}
+              label={label}
+              events={eventPositions}
               onClick={() => handleSelectAssignment(assignment.assignmentId)}
-              onMouseEnter={(event) => {
-                const rect = (event.target as SVGRectElement).getBoundingClientRect();
-                onTooltipShow(assignment.assignmentId, rect.left + rect.width / 2, rect.top - 10);
+              onBodyMouseEnter={(e) => {
+                onTooltipShow(assignment.assignmentId, e.clientX, e.clientY - 14, undefined);
+              }}
+              onEventMouseEnter={(eventIndex, e) => {
+                onTooltipShow(assignment.assignmentId, e.clientX, e.clientY - 14, eventIndex);
               }}
               onMouseLeave={onTooltipHide}
             />

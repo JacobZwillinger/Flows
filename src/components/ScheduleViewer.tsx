@@ -1,30 +1,39 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Day, Assignment } from '../types';
+import { Day, Assignment, Category } from '../types';
 import Timeline from './Timeline';
+import MissionPanel from './MissionPanel';
 import Tooltip from './Tooltip';
 
 interface ScheduleViewerProps {
   day: Day;
   assignments: Assignment[];
+  allAssignments: Assignment[];
+  categories: Category[];
   selectedAssignmentId: string | null;
   onSelectAssignment: (id: string | null) => void;
   previewMode: boolean;
+  cellOverview: boolean;
   onExitPreview: () => void;
 }
 
 const ROW_HEIGHT = 40;
+const ROW_HEIGHT_CELL = 90;
 const HEADER_HEIGHT = 30;
 
 export default function ScheduleViewer({
   day,
   assignments,
+  allAssignments,
+  categories,
   selectedAssignmentId,
   onSelectAssignment,
   previewMode,
+  cellOverview,
   onExitPreview,
 }: ScheduleViewerProps) {
   const [tooltip, setTooltip] = useState<{
     assignmentId: string;
+    eventIndex?: number;
     x: number;
     y: number;
   } | null>(null);
@@ -33,8 +42,13 @@ export default function ScheduleViewer({
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(600);
 
-  const handleTooltipShow = useCallback((assignmentId: string, x: number, y: number) => {
-    setTooltip({ assignmentId, x, y });
+  const handleTooltipShow = useCallback((
+    assignmentId: string,
+    x: number,
+    y: number,
+    eventIndex?: number,
+  ) => {
+    setTooltip({ assignmentId, x, y, eventIndex });
   }, []);
 
   const handleTooltipHide = useCallback(() => {
@@ -65,35 +79,64 @@ export default function ScheduleViewer({
   const previewRowHeight = assignments.length > 0
     ? Math.max(1, (viewportHeight - HEADER_HEIGHT) / assignments.length)
     : 6;
-  const effectiveRowHeight = previewMode ? previewRowHeight : ROW_HEIGHT;
+
+  const effectiveRowHeight = previewMode
+    ? previewRowHeight
+    : cellOverview
+    ? ROW_HEIGHT_CELL
+    : ROW_HEIGHT;
+
   const workerScrollOffset = Math.max(0, scrollTop - HEADER_HEIGHT);
 
   return (
     <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
       <div
         ref={scrollContainerRef}
-        style={{ height: '100%', overflow: 'auto', position: 'relative' }}
+        style={{
+          height: '100%',
+          overflow: 'auto',
+          position: 'relative',
+          display: 'flex',
+        }}
         onScroll={handleScroll}
       >
-        <Timeline
-          day={day}
-          assignments={assignments}
-          rowHeight={effectiveRowHeight}
-          headerHeight={HEADER_HEIGHT}
-          selectedAssignmentId={selectedAssignmentId}
-          onSelectAssignment={onSelectAssignment}
-          onTooltipShow={handleTooltipShow}
-          onTooltipHide={handleTooltipHide}
-          scrollTop={workerScrollOffset}
-          viewportHeight={viewportHeight}
-          previewMode={previewMode}
-          onExitPreview={onExitPreview}
-        />
+        {/* Left panel — hidden in preview mode */}
+        {!previewMode && (
+          <MissionPanel
+            assignments={assignments}
+            categories={categories}
+            rowHeight={effectiveRowHeight}
+            headerHeight={HEADER_HEIGHT}
+            cellOverview={cellOverview}
+            allAssignments={allAssignments}
+          />
+        )}
+
+        {/* Timeline */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Timeline
+            day={day}
+            assignments={assignments}
+            rowHeight={effectiveRowHeight}
+            headerHeight={HEADER_HEIGHT}
+            cellOverview={cellOverview}
+            selectedAssignmentId={selectedAssignmentId}
+            onSelectAssignment={onSelectAssignment}
+            onTooltipShow={handleTooltipShow}
+            onTooltipHide={handleTooltipHide}
+            scrollTop={workerScrollOffset}
+            viewportHeight={viewportHeight}
+            previewMode={previewMode}
+            onExitPreview={onExitPreview}
+          />
+        </div>
       </div>
 
       {tooltipAssignment && tooltip && (
         <Tooltip
           assignment={tooltipAssignment}
+          eventIndex={tooltip.eventIndex}
+          allAssignments={allAssignments}
           x={tooltip.x}
           y={tooltip.y}
         />

@@ -7,28 +7,40 @@ export interface Day {
 
 export interface Category {
   categoryId: string;
-  name: string;
+  name: string; // 'Tanker' | 'Strike' | 'CAP'
 }
 
-export interface AssignmentDrawer {
-  workOrder: string;
-  supervisor: string;
-  notes: string;
-  risk: string;
+export type MissionEventType = 'on-station' | 'refuel-tanker' | 'refuel-receiver' | 'strike';
+
+export interface MissionEvent {
+  type: MissionEventType;
+  time: string;                  // ISO datetime (start time)
+  endTime?: string;              // ISO datetime (end time — for 'on-station' bands)
+  fuelLbs?: number;              // lbs of fuel (refuel-tanker / refuel-receiver)
+  linkedAssignmentId?: string;   // cross-reference for refuel pairs
+  dmpiCount?: number;            // for 'strike': DMPIs released in this attack run
 }
 
 export interface Assignment {
   assignmentId: string;
   dayId: string;
-  workerId: string;
-  workerDisplay: string;
-  title: string;
+  missionNumber: number;
+  callsign: string;
   categoryId: string;
   start: string;
   end: string;
-  status: string;
-  location: string;
-  drawer: AssignmentDrawer;
+  status: string; // 'OK' | 'AT RISK' | 'DEGRADED'
+  events: MissionEvent[];
+  // Tanker-specific
+  totalFuelLbs?: number;
+  remainingFuelLbs?: number;
+  // Strike-specific
+  dmpiTotal?: number;
+  dmpiHit?: number;
+  // CAP-specific
+  onStationMinutes?: number;
+  threatContacts?: number;
+  interceptsCompleted?: number;
 }
 
 export interface MockData {

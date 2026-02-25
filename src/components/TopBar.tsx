@@ -1,6 +1,9 @@
 import { Day, Category } from '../types';
 import { Select, MenuItem, TextField, InputLabel, FormControl, Box, Button } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import GridViewIcon from '@mui/icons-material/GridView';
+
+export type ViewMode = 'default' | 'preview' | 'cell';
 
 interface TopBarProps {
   days: Day[];
@@ -11,8 +14,8 @@ interface TopBarProps {
   onDayChange: (dayId: string) => void;
   onCategoryChange: (categoryId: string | null) => void;
   onSearchChange: (query: string) => void;
-  previewMode: boolean;
-  onTogglePreview: () => void;
+  viewMode: ViewMode;
+  onSetViewMode: (mode: ViewMode) => void;
 }
 
 export function TopBar({
@@ -24,8 +27,8 @@ export function TopBar({
   onDayChange,
   onCategoryChange,
   onSearchChange,
-  previewMode,
-  onTogglePreview,
+  viewMode,
+  onSetViewMode,
 }: TopBarProps) {
   return (
     <Box sx={{ display: 'flex', gap: 2, p: 2, alignItems: 'center' }}>
@@ -44,11 +47,11 @@ export function TopBar({
         </Select>
       </FormControl>
 
-      <FormControl size="small" sx={{ minWidth: 150 }}>
-        <InputLabel>Category</InputLabel>
+      <FormControl size="small" sx={{ minWidth: 120 }}>
+        <InputLabel>Type</InputLabel>
         <Select
           value={selectedCategoryId ?? 'all'}
-          label="Category"
+          label="Type"
           onChange={(e) => onCategoryChange(e.target.value === 'all' ? null : e.target.value)}
         >
           <MenuItem value="all">All</MenuItem>
@@ -68,15 +71,34 @@ export function TopBar({
         sx={{ minWidth: 200 }}
       />
 
-      <Button
-        size="small"
-        variant={previewMode ? 'contained' : 'outlined'}
-        startIcon={<VisibilityIcon />}
-        onClick={onTogglePreview}
-        sx={{ whiteSpace: 'nowrap' }}
-      >
-        {previewMode ? 'Exit Preview' : 'Day Overview'}
-      </Button>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Button
+          size="small"
+          variant={viewMode === 'default' ? 'contained' : 'outlined'}
+          onClick={() => onSetViewMode('default')}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          Default View
+        </Button>
+        <Button
+          size="small"
+          variant={viewMode === 'preview' ? 'contained' : 'outlined'}
+          startIcon={<VisibilityIcon />}
+          onClick={() => onSetViewMode('preview')}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          Day Overview
+        </Button>
+        <Button
+          size="small"
+          variant={viewMode === 'cell' ? 'contained' : 'outlined'}
+          startIcon={<GridViewIcon />}
+          onClick={() => onSetViewMode('cell')}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          Cell Overview
+        </Button>
+      </Box>
     </Box>
   );
 }
