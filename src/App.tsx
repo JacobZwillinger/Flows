@@ -85,6 +85,7 @@ export default function App() {
               assignments={data.assignments}
               categories={data.categories}
               allAssignments={data.assignments}
+              searchQuery={searchQuery}
               onSelectAssignment={setSelectedAssignmentId}
             />
           ) : (

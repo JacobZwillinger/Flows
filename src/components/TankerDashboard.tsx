@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Assignment, Category, Day } from '../types';
 import { formatHHMMSS } from '../utils/timeUtils';
-import { formatFuelLbs } from '../utils/missionUtils';
+import { formatFuelLbs, shortCallsign } from '../utils/missionUtils';
 import { FlightStatus, getFlightStatus, getScenarioReferenceTime } from '../utils/flightStatus';
 
 interface TankerDashboardProps {
@@ -9,6 +9,7 @@ interface TankerDashboardProps {
   assignments: Assignment[];
   categories: Category[];
   allAssignments: Assignment[];
+  searchQuery: string;
   onSelectAssignment: (id: string) => void;
 }
 
@@ -120,6 +121,7 @@ export default function TankerDashboard({
   assignments,
   categories,
   allAssignments,
+  searchQuery,
   onSelectAssignment,
 }: TankerDashboardProps) {
   const [filter, setFilter] = useState<TankerFilter>('airborne');
@@ -169,12 +171,25 @@ export default function TankerDashboard({
     });
   }, [assignments, day, tankerCategoryIds, allAssignments]);
 
-  const oversubscribed = tankerCards.filter((c) => c.marginFuel < 0);
-  const airborneCount = tankerCards.filter(
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const searchedCards = tankerCards.filter((card) => {
+    if (!normalizedQuery) return true;
+    const full = card.assignment.callsign.toLowerCase();
+    const short = shortCallsign(card.assignment.callsign).toLowerCase();
+    const mission = String(card.assignment.missionNumber);
+    const receiverHit = card.offloads.some((o) => o.receiverCallsign.toLowerCase().includes(normalizedQuery));
+    return full.includes(normalizedQuery)
+      || short.includes(normalizedQuery)
+      || mission.includes(normalizedQuery)
+      || receiverHit;
+  });
+
+  const oversubscribed = searchedCards.filter((c) => c.marginFuel < 0);
+  const airborneCount = searchedCards.filter(
     (c) => c.flightStatus !== 'Pending' && c.flightStatus !== 'Mission Complete'
   ).length;
 
-  const filteredCards = tankerCards.filter((card) => {
+  const filteredCards = searchedCards.filter((card) => {
     if (filter === 'all') return true;
     if (filter === 'airborne') return card.flightStatus !== 'Pending' && card.flightStatus !== 'Mission Complete';
     if (filter === 'scheduled') return card.flightStatus === 'Pending';
@@ -221,9 +236,9 @@ export default function TankerDashboard({
       >
         <span style={{ color: '#6b7280', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em' }}>FILTER</span>
         {([
-          ['all', `All (${tankerCards.length})`],
+          ['all', `All (${searchedCards.length})`],
           ['airborne', `Airborne (${airborneCount})`],
-          ['scheduled', `Scheduled (${tankerCards.length - airborneCount})`],
+          ['scheduled', `Scheduled (${searchedCards.length - airborneCount})`],
           ['issues', `Issues (${oversubscribed.length})`],
         ] as Array<[TankerFilter, string]>).map(([id, label]) => {
           const active = filter === id;
@@ -249,6 +264,11 @@ export default function TankerDashboard({
       </div>
 
       <div style={{ padding: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))' }}>
+        {filteredCards.length === 0 && (
+          <div style={{ color: '#9CA3AF', fontSize: 13 }}>
+            No tankers match your current filters/search.
+          </div>
+        )}
         {filteredCards.map((card) => {
           const isIssue = card.marginFuel < 0;
           const marginColor = getMarginColor(card.totalFuel, card.marginFuel);
@@ -332,4 +352,3 @@ export default function TankerDashboard({
     </div>
   );
 }
-
