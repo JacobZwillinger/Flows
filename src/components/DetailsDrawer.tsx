@@ -10,6 +10,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
+import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
+import FlightLandIcon from '@mui/icons-material/FlightLand';
 import { Assignment, Category, Day, MissionEvent } from '../types';
 import { formatHHMMSS, formatDuration } from '../utils/timeUtils';
 import { formatFuelLbs } from '../utils/missionUtils';
@@ -53,6 +55,143 @@ function EventLabel({ ev }: { ev: MissionEvent }) {
     return <CrisisAlertIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} />;
   }
   return <span style={{ width: 14, display: 'inline-block', color: '#777' }}>•</span>;
+}
+
+interface SubwayStop {
+  time: Date;
+  label: string;
+  detail?: string;
+  type: 'takeoff' | 'landing' | 'on-station' | 'off-station' | 'refuel' | 'strike';
+}
+
+function stopPriority(stop: SubwayStop): number {
+  switch (stop.type) {
+    case 'takeoff': return 0;
+    case 'on-station': return 1;
+    case 'refuel': return 2;
+    case 'strike': return 3;
+    case 'off-station': return 4;
+    case 'landing': return 5;
+    default: return 10;
+  }
+}
+
+function buildSubwayStops(assignment: Assignment, allAssignments: Assignment[]): SubwayStop[] {
+  const stops: SubwayStop[] = [
+    {
+      time: new Date(assignment.start),
+      label: 'Takeoff',
+      type: 'takeoff',
+    },
+    {
+      time: new Date(assignment.end),
+      label: 'Landing',
+      type: 'landing',
+    },
+  ];
+
+  for (const ev of assignment.events) {
+    if (ev.type === 'on-station') {
+      stops.push({
+        time: new Date(ev.time),
+        label: 'On Station',
+        type: 'on-station',
+      });
+      if (ev.endTime) {
+        stops.push({
+          time: new Date(ev.endTime),
+          label: 'Off Station',
+          type: 'off-station',
+        });
+      }
+      continue;
+    }
+
+    if (ev.type === 'refuel-tanker' || ev.type === 'refuel-receiver') {
+      const linked = ev.linkedAssignmentId
+        ? allAssignments.find((a) => a.assignmentId === ev.linkedAssignmentId)
+        : null;
+      const isTanker = ev.type === 'refuel-tanker';
+      stops.push({
+        time: new Date(ev.time),
+        label: isTanker ? 'Fuel Offload' : 'Fuel Receive',
+        detail: `${linked?.callsign ?? 'UNKNOWN'} • ${formatFuelLbs(ev.fuelLbs ?? 0)} lbs`,
+        type: 'refuel',
+      });
+      continue;
+    }
+
+    stops.push({
+      time: new Date(ev.time),
+      label: 'Strike',
+      detail: `${ev.dmpiCount ?? 1} DMPIs`,
+      type: 'strike',
+    });
+  }
+
+  return stops.sort((a, b) => {
+    const timeDiff = a.time.getTime() - b.time.getTime();
+    if (timeDiff !== 0) return timeDiff;
+    return stopPriority(a) - stopPriority(b);
+  });
+}
+
+function SubwayStopIcon({ type }: { type: SubwayStop['type'] }) {
+  if (type === 'takeoff') return <FlightTakeoffIcon sx={{ fontSize: 15, color: EVENT_ICON_COLOR }} />;
+  if (type === 'landing') return <FlightLandIcon sx={{ fontSize: 15, color: EVENT_ICON_COLOR }} />;
+  if (type === 'refuel') return <LocalGasStationIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} />;
+  if (type === 'strike') return <CrisisAlertIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} />;
+  return <span style={{ width: 14, display: 'inline-block', color: '#777' }}>•</span>;
+}
+
+function MissionSubwayMap({ stops }: { stops: SubwayStop[] }) {
+  return (
+    <Box sx={{ position: 'relative', pl: 1.5 }}>
+      <Box
+        sx={{
+          position: 'absolute',
+          left: 16,
+          top: 10,
+          bottom: 10,
+          width: 2,
+          backgroundColor: '#374151',
+        }}
+      />
+      {stops.map((stop, idx) => (
+        <Box key={`${stop.label}-${stop.time.toISOString()}-${idx}`} sx={{ display: 'flex', gap: 1.5, mb: 1.2, position: 'relative' }}>
+          <Box
+            sx={{
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
+              border: '1px solid #4b5563',
+              backgroundColor: '#111827',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              mt: 0.15,
+            }}
+          >
+            <SubwayStopIcon type={stop.type} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="body2" sx={{ color: '#d1d5db', fontWeight: 700, lineHeight: 1.2 }}>
+              {stop.label}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#9ca3af', fontFamily: 'monospace' }}>
+              {formatHHMMSS(stop.time)}Z
+            </Typography>
+            {stop.detail && (
+              <Typography variant="caption" sx={{ display: 'block', color: '#93c5fd', lineHeight: 1.15 }}>
+                {stop.detail}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
 }
 
 function CategoryDetails({ assignment, allAssignments }: { assignment: Assignment; allAssignments: Assignment[] }) {
@@ -152,6 +291,7 @@ export const DetailsDrawer: React.FC<DetailsDrawerProps> = ({
     : new Date(assignment.start);
   const flightStatus = getFlightStatus(assignment, scenarioReferenceTime);
   const flightStatusColor = getFlightStatusColor(flightStatus);
+  const subwayStops = buildSubwayStops(assignment, allAssignments);
 
   return (
     <Drawer
@@ -231,6 +371,10 @@ export const DetailsDrawer: React.FC<DetailsDrawerProps> = ({
         </Box>
 
         <Divider sx={{ my: 2 }} />
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Mission Subway</Typography>
+        <MissionSubwayMap stops={subwayStops} />
+
+        <Divider sx={{ my: 2 }} />
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Mission Details</Typography>
         <CategoryDetails assignment={assignment} allAssignments={allAssignments} />
 
@@ -262,4 +406,3 @@ export const DetailsDrawer: React.FC<DetailsDrawerProps> = ({
     </Drawer>
   );
 };
-
