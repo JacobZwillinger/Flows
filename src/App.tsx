@@ -4,6 +4,7 @@ import { TopBar, ViewMode } from './components/TopBar';
 import ScheduleViewer from './components/ScheduleViewer';
 import { DetailsDrawer } from './components/DetailsDrawer';
 import { useFilteredAssignments } from './hooks/useFilteredAssignments';
+import TankerDashboard from './components/TankerDashboard';
 
 export default function App() {
   const [data, setData] = useState<MockData | null>(null);
@@ -78,15 +79,25 @@ export default function App() {
 
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {selectedDay ? (
-          <ScheduleViewer
-            day={selectedDay}
-            assignments={filteredAssignments}
-            allAssignments={data.assignments}
-            categories={data.categories}
-            selectedAssignmentId={selectedAssignmentId}
-            onSelectAssignment={setSelectedAssignmentId}
-            cellOverview={viewMode === 'cell'}
-          />
+          viewMode === 'dashboard' ? (
+            <TankerDashboard
+              day={selectedDay}
+              assignments={data.assignments}
+              categories={data.categories}
+              allAssignments={data.assignments}
+              onSelectAssignment={setSelectedAssignmentId}
+            />
+          ) : (
+            <ScheduleViewer
+              day={selectedDay}
+              assignments={filteredAssignments}
+              allAssignments={data.assignments}
+              categories={data.categories}
+              selectedAssignmentId={selectedAssignmentId}
+              onSelectAssignment={setSelectedAssignmentId}
+              cellOverview={viewMode === 'cell'}
+            />
+          )
         ) : (
           <div style={{ padding: 24, color: '#999' }}>Select a day to view the schedule.</div>
         )}
