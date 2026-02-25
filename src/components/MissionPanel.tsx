@@ -15,7 +15,7 @@ interface MissionPanelProps {
 }
 
 export const PANEL_WIDTH = 220;
-export const PANEL_WIDTH_CELL = 260;
+export const PANEL_WIDTH_CELL = 300;
 
 function getStatusColor(status: string): string {
   switch (status) {
@@ -118,30 +118,53 @@ export default function MissionPanel({
               {/* Status stripe */}
               <div style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 3, backgroundColor: flightStatusColor, borderRadius: '0 2px 2px 0' }} />
 
-              {/* Header row: number + full callsign + type badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px 0 12px' }}>
+              {/* Header row: number + full callsign + stacked chips */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '0 10px 0 12px' }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#e8e8e8', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                   {assignment.missionNumber}
                 </span>
-                <span style={{ fontSize: 13, color: '#bbb', fontFamily: 'monospace', fontWeight: 600, flexShrink: 0 }}>
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: '#c8c8c8',
+                    fontFamily: 'monospace',
+                    fontWeight: 600,
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {assignment.callsign}
                 </span>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, color: typeColor,
-                  border: `1px solid ${typeColor}`, borderRadius: 3,
-                  padding: '1px 3px', letterSpacing: '0.05em', lineHeight: 1.4, marginLeft: 'auto',
-                }}>
-                  {catName.toUpperCase()}
-                </span>
+                <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, color: typeColor,
+                    border: `1px solid ${typeColor}`, borderRadius: 3,
+                    padding: '1px 5px', letterSpacing: '0.05em', lineHeight: 1.4,
+                  }}>
+                    {catName.toUpperCase()}
+                  </span>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: flightStatusColor,
+                    border: `1px solid ${flightStatusColor}`,
+                    borderRadius: 3,
+                    padding: '1px 5px',
+                    letterSpacing: '0.03em',
+                    lineHeight: 1.4,
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                  }}>
+                    {flightStatus.toUpperCase()}
+                  </span>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 10px 0 12px' }}>
-                <span style={{ fontSize: 12, color: flightStatusColor, fontWeight: 700, lineHeight: 1.3 }}>
-                  {flightStatus}
-                </span>
-                <span style={{ color: '#555' }}>•</span>
-                <span style={{ fontSize: 12, color: healthColor, fontWeight: 700, lineHeight: 1.3 }}>
-                  {assignment.status}
-                </span>
+
+              <div style={{ padding: '6px 10px 0 12px', fontSize: 12, lineHeight: 1.3 }}>
+                <span style={{ color: '#7d7d7d', fontWeight: 600 }}>Health: </span>
+                <span style={{ color: healthColor, fontWeight: 700 }}>{assignment.status}</span>
               </div>
             </div>
           );

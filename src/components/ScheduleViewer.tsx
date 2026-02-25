@@ -15,7 +15,7 @@ interface ScheduleViewerProps {
 }
 
 const ROW_HEIGHT = 40;
-const ROW_HEIGHT_CELL = 90;
+const ROW_HEIGHT_CELL = 108;
 const HEADER_HEIGHT = 30;
 
 export default function ScheduleViewer({
