@@ -29,53 +29,54 @@ interface AssignmentWormProps {
 }
 
 const EVENT_ICON_COLOR = '#D1D5DB';
-const ICON_HALF = 7;
 
 // ── Icons (centered at cx, cy) ───────────────────────────────────────────────
 
-function FuelPumpIcon({ cx, cy }: { cx: number; cy: number }) {
+function FuelPumpIcon({ cx, cy, size }: { cx: number; cy: number; size: number }) {
+  const half = size / 2;
   return (
     <foreignObject
-      x={cx - ICON_HALF}
-      y={cy - ICON_HALF}
-      width={14}
-      height={14}
+      x={cx - half}
+      y={cy - half}
+      width={size}
+      height={size}
       style={{ overflow: 'visible', pointerEvents: 'none' }}
     >
       <div
         style={{
-          width: 14,
-          height: 14,
+          width: size,
+          height: size,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <LocalGasStationIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} />
+        <LocalGasStationIcon sx={{ fontSize: size, color: EVENT_ICON_COLOR }} />
       </div>
     </foreignObject>
   );
 }
 
-function StrikeIcon({ cx, cy }: { cx: number; cy: number }) {
+function StrikeIcon({ cx, cy, size }: { cx: number; cy: number; size: number }) {
+  const half = size / 2;
   return (
     <foreignObject
-      x={cx - ICON_HALF}
-      y={cy - ICON_HALF}
-      width={14}
-      height={14}
+      x={cx - half}
+      y={cy - half}
+      width={size}
+      height={size}
       style={{ overflow: 'visible', pointerEvents: 'none' }}
     >
       <div
         style={{
-          width: 14,
-          height: 14,
+          width: size,
+          height: size,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <CrisisAlertIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} />
+        <CrisisAlertIcon sx={{ fontSize: size, color: EVENT_ICON_COLOR }} />
       </div>
     </foreignObject>
   );
@@ -131,6 +132,8 @@ export default function AssignmentWorm({
   const effectiveWidth = Math.max(width, minWidth);
   const rx = Math.min(6, height / 2);
   const cy = y + height / 2;
+  const iconSize = Math.max(12, Math.min(22, Math.round(height * 0.42)));
+  const iconHalf = iconSize / 2;
 
   // Separate event types
   const onStationEvents = events.filter(e => e.type === 'on-station');
@@ -141,7 +144,7 @@ export default function AssignmentWorm({
 
   // Text clip: leave room before the first point event icon
   const textPadding = 8;
-  const iconTextClearance = 12;
+  const iconTextClearance = iconHalf + 6;
   const firstPointX = pointEvents.length > 0
     ? Math.min(...pointEvents.map(e => e.x)) - iconTextClearance
     : x + effectiveWidth;
@@ -241,7 +244,7 @@ export default function AssignmentWorm({
       {/* ── Refuel + non-strike point events ── */}
       {showEvents && nonStrikePointEvents.map((ev) => {
         const cx2 = ev.x;
-        if (cx2 < x + ICON_HALF + 4 || cx2 > x + effectiveWidth - ICON_HALF - 4) return null;
+        if (cx2 < x + iconHalf + 4 || cx2 > x + effectiveWidth - iconHalf - 4) return null;
         return (
           <g
             key={ev.eventIndex}
@@ -252,7 +255,7 @@ export default function AssignmentWorm({
             {/* Invisible hit area */}
             <rect x={cx2 - 11} y={y} width={22} height={height} fill="transparent" />
             {ev.type === 'refuel-tanker' || ev.type === 'refuel-receiver'
-              ? <FuelPumpIcon cx={cx2} cy={cy} />
+              ? <FuelPumpIcon cx={cx2} cy={cy} size={iconSize} />
               : null}
           </g>
         );
@@ -261,7 +264,7 @@ export default function AssignmentWorm({
       {/* ── DMPI / strike events (grouped by proximity) ── */}
       {showEvents && dmpiGroups.map((group) => {
         const cx2 = group.cx;
-        if (cx2 < x + ICON_HALF + 4 || cx2 > x + effectiveWidth - ICON_HALF - 4) return null;
+        if (cx2 < x + iconHalf + 4 || cx2 > x + effectiveWidth - iconHalf - 4) return null;
         const showBadge = group.totalDmpi > 1;
         return (
           <g
@@ -272,7 +275,7 @@ export default function AssignmentWorm({
           >
             {/* Invisible hit area */}
             <rect x={cx2 - 11} y={y} width={22} height={height} fill="transparent" />
-            <StrikeIcon cx={cx2} cy={cy} />
+            <StrikeIcon cx={cx2} cy={cy} size={iconSize} />
             {showBadge && (
               <>
                 <circle cx={cx2 + 9} cy={cy - 9} r={8} fill="#1a1a1a" stroke={EVENT_ICON_COLOR} strokeWidth={1.5} style={{ pointerEvents: 'none' }} />
