@@ -263,7 +263,15 @@ export default function TankerDashboard({
         })}
       </div>
 
-      <div style={{ padding: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))' }}>
+      <div
+        style={{
+          padding: 16,
+          display: 'grid',
+          gap: 12,
+          gridTemplateColumns: 'repeat(auto-fill, 420px)',
+          justifyContent: 'start',
+        }}
+      >
         {filteredCards.length === 0 && (
           <div style={{ color: '#9CA3AF', fontSize: 13 }}>
             No tankers match your current filters/search.
@@ -280,7 +288,8 @@ export default function TankerDashboard({
               onClick={() => onSelectAssignment(card.assignment.assignmentId)}
               style={{
                 aspectRatio: '1 / 1',
-                minHeight: 420,
+                width: 420,
+                height: 420,
                 display: 'flex',
                 flexDirection: 'column',
                 textAlign: 'left',
