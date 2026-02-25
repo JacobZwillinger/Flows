@@ -161,11 +161,6 @@ export default function MissionPanel({
                   </span>
                 </div>
               </div>
-
-              <div style={{ padding: '6px 10px 0 12px', fontSize: 12, lineHeight: 1.3 }}>
-                <span style={{ color: '#7d7d7d', fontWeight: 600 }}>Health: </span>
-                <span style={{ color: healthColor, fontWeight: 700 }}>{assignment.status}</span>
-              </div>
             </div>
           );
         }
