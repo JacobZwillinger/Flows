@@ -49,6 +49,7 @@ export default function App() {
   if (!data) return null;
 
   const selectedDay = data.days.find((d) => d.dayId === selectedDayId);
+  const selectedDayAssignments = data.assignments.filter((a) => a.dayId === selectedDayId);
   const selectedAssignment = selectedAssignmentId
     ? data.assignments.find((a) => a.assignmentId === selectedAssignmentId) ?? null
     : null;
@@ -95,6 +96,9 @@ export default function App() {
         open={selectedAssignment !== null}
         assignment={selectedAssignment}
         categories={data.categories}
+        day={selectedDay ?? null}
+        dayAssignments={selectedDayAssignments}
+        allAssignments={data.assignments}
         onClose={() => setSelectedAssignmentId(null)}
       />
     </div>
