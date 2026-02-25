@@ -12,6 +12,7 @@ interface MissionPanelProps {
   rowHeight: number;
   headerHeight: number;
   cellOverview?: boolean;
+  onSelectAssignment?: (id: string) => void;
 }
 
 export const PANEL_WIDTH = 220;
@@ -42,6 +43,7 @@ export default function MissionPanel({
   rowHeight,
   headerHeight,
   cellOverview = false,
+  onSelectAssignment,
 }: MissionPanelProps) {
   const getCategoryName = (categoryId: string) =>
     categories.find(c => c.categoryId === categoryId)?.name ?? '?';
@@ -103,6 +105,7 @@ export default function MissionPanel({
           return (
             <div
               key={assignment.assignmentId}
+              onClick={() => onSelectAssignment?.(assignment.assignmentId)}
               style={{
                 height: rowHeight,
                 borderBottom: '1px solid #1c1c1c',
@@ -113,6 +116,7 @@ export default function MissionPanel({
                 paddingTop: 6,
                 position: 'relative',
                 overflow: 'hidden',
+                cursor: 'pointer',
               }}
             >
               {/* Status stripe */}
@@ -169,6 +173,7 @@ export default function MissionPanel({
         return (
           <div
             key={assignment.assignmentId}
+            onClick={() => onSelectAssignment?.(assignment.assignmentId)}
             style={{
               height: rowHeight,
               display: 'flex',
@@ -178,6 +183,7 @@ export default function MissionPanel({
               overflow: 'hidden',
               borderBottom: '1px solid #1c1c1c',
               boxSizing: 'border-box',
+              cursor: 'pointer',
             }}
           >
             <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: healthColor, flexShrink: 0 }} />

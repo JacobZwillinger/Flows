@@ -97,6 +97,7 @@ export default function ScheduleViewer({
           headerHeight={HEADER_HEIGHT}
           cellOverview={cellOverview}
           day={day}
+          onSelectAssignment={onSelectAssignment}
         />
 
         {/* Timeline */}
