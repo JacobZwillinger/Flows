@@ -263,7 +263,7 @@ export default function TankerDashboard({
         })}
       </div>
 
-      <div style={{ padding: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))' }}>
+      <div style={{ padding: 16, display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))' }}>
         {filteredCards.length === 0 && (
           <div style={{ color: '#9CA3AF', fontSize: 13 }}>
             No tankers match your current filters/search.
@@ -279,6 +279,10 @@ export default function TankerDashboard({
               type="button"
               onClick={() => onSelectAssignment(card.assignment.assignmentId)}
               style={{
+                aspectRatio: '1 / 1',
+                minHeight: 420,
+                display: 'flex',
+                flexDirection: 'column',
                 textAlign: 'left',
                 background: '#171b21',
                 border: isIssue ? '1px solid #dc2626' : '1px solid #303742',
@@ -336,7 +340,7 @@ export default function TankerDashboard({
                 </div>
               </div>
 
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 'auto', paddingTop: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ color: '#9CA3AF', fontSize: 11, letterSpacing: '0.06em', fontWeight: 700 }}>
                     REFUELING SCHEDULE
