@@ -96,6 +96,7 @@ export default function ScheduleViewer({
           rowHeight={effectiveRowHeight}
           headerHeight={HEADER_HEIGHT}
           cellOverview={cellOverview}
+          selectedAssignmentId={selectedAssignmentId}
           day={day}
           onSelectAssignment={onSelectAssignment}
         />

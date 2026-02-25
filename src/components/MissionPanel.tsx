@@ -12,6 +12,7 @@ interface MissionPanelProps {
   rowHeight: number;
   headerHeight: number;
   cellOverview?: boolean;
+  selectedAssignmentId?: string | null;
   onSelectAssignment?: (id: string) => void;
 }
 
@@ -43,6 +44,7 @@ export default function MissionPanel({
   rowHeight,
   headerHeight,
   cellOverview = false,
+  selectedAssignmentId = null,
   onSelectAssignment,
 }: MissionPanelProps) {
   const getCategoryName = (categoryId: string) =>
@@ -100,6 +102,7 @@ export default function MissionPanel({
         const typeColor = getTypeColor(catName);
         const flightStatus = statusById.get(assignment.assignmentId) ?? 'Pending';
         const flightStatusColor = getFlightStatusColor(flightStatus);
+        const isSelected = selectedAssignmentId === assignment.assignmentId;
 
         if (cellOverview) {
           return (
@@ -109,6 +112,8 @@ export default function MissionPanel({
               style={{
                 height: rowHeight,
                 borderBottom: '1px solid #1c1c1c',
+                borderLeft: isSelected ? '2px solid #60A5FA' : '2px solid transparent',
+                backgroundColor: isSelected ? '#1a2029' : 'transparent',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
@@ -182,6 +187,8 @@ export default function MissionPanel({
               gap: 7,
               overflow: 'hidden',
               borderBottom: '1px solid #1c1c1c',
+              borderLeft: isSelected ? '2px solid #60A5FA' : '2px solid transparent',
+              backgroundColor: isSelected ? '#1a2029' : 'transparent',
               boxSizing: 'border-box',
               cursor: 'pointer',
             }}
