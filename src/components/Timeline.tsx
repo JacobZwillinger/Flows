@@ -5,9 +5,8 @@ import { select } from 'd3-selection';
 import { Day, Assignment } from '../types';
 import { formatHHMMSS, generateHourMarks } from '../utils/timeUtils';
 import { shortCallsign } from '../utils/missionUtils';
+import { getFlightStatus, getFlightStatusColor, getScenarioReferenceTime } from '../utils/flightStatus';
 import AssignmentWorm from './AssignmentWorm';
-
-const WORM_BLUE = '#3B82F6';
 
 interface TimelineProps {
   day: Day;
@@ -21,8 +20,6 @@ interface TimelineProps {
   onTooltipHide: () => void;
   scrollTop: number;
   viewportHeight: number;
-  previewMode: boolean;
-  onExitPreview: () => void;
 }
 
 export default function Timeline({
@@ -37,18 +34,15 @@ export default function Timeline({
   onTooltipHide,
   scrollTop,
   viewportHeight,
-  previewMode,
-  onExitPreview,
 }: TimelineProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const zoomBehaviorRef = useRef<ReturnType<typeof d3zoom<SVGSVGElement, unknown>> | null>(null);
-  const previewRef = useRef(previewMode);
-  previewRef.current = previewMode;
-  const onExitPreviewRef = useRef(onExitPreview);
-  onExitPreviewRef.current = onExitPreview;
   const [containerWidth, setContainerWidth] = useState(800);
   const [transform, setTransform] = useState({ k: 1, x: 0 });
+  const scenarioReferenceTime = useMemo(
+    () => getScenarioReferenceTime(day, assignments),
+    [day, assignments]
+  );
 
   const dayStart = useMemo(() => new Date(day.start), [day.start]);
   const dayEnd = useMemo(() => new Date(day.end), [day.end]);
@@ -108,23 +102,13 @@ export default function Timeline({
         return true;
       })
       .on('zoom', (event) => {
-        if (previewRef.current && event.sourceEvent) {
-          onExitPreviewRef.current();
-          return;
-        }
         setTransform({ k: event.transform.k, x: event.transform.x });
       });
 
-    zoomBehaviorRef.current = zoomBehavior;
     svg.call(zoomBehavior as any);
 
     const svgEl = svgRef.current;
     const wheelHandler = (event: WheelEvent) => {
-      if (previewRef.current) {
-        event.preventDefault();
-        onExitPreviewRef.current();
-        return;
-      }
       if (event.ctrlKey) {
         event.preventDefault();
         return;
@@ -146,20 +130,9 @@ export default function Timeline({
     };
   }, [maxScale, containerWidth]);
 
-  // Reset zoom when entering preview mode
-  useEffect(() => {
-    if (previewMode && svgRef.current && zoomBehaviorRef.current) {
-      const svg = select(svgRef.current);
-      svg.call(zoomBehaviorRef.current.transform as any, zoomIdentity);
-    }
-  }, [previewMode]);
-
   const handleSelectAssignment = useCallback((id: string | null) => {
-    if (previewMode) {
-      onExitPreview();
-    }
     onSelectAssignment(id);
-  }, [previewMode, onExitPreview, onSelectAssignment]);
+  }, [onSelectAssignment]);
 
   // Virtualization
   const buffer = 5;
@@ -234,26 +207,20 @@ export default function Timeline({
         {/* Assignment worms */}
         {visibleAssignments.map((assignment, relIdx) => {
           const idx = startRow + relIdx;
-          const isDayOverview = previewMode;
           const startX = xScale(new Date(assignment.start));
           const endX = xScale(new Date(assignment.end));
           const w = endX - startX;
           const rowTop = idx * rowHeight;
-          const h = previewMode
-            ? Math.max(0.5, rowHeight)
-            : cellOverview
+          const h = cellOverview
             ? Math.max(0.5, rowHeight - 8)
             : Math.max(0.5, rowHeight);
-          const wy = previewMode
-            ? rowTop
-            : cellOverview
+          const wy = cellOverview
             ? rowTop + 4
             : rowTop;
-          const color = WORM_BLUE;
+          const flightStatus = getFlightStatus(assignment, scenarioReferenceTime);
+          const color = getFlightStatusColor(flightStatus);
 
-          const sourceEvents = isDayOverview
-            ? (assignment.events ?? []).filter((ev) => ev.type === 'on-station')
-            : (assignment.events ?? []);
+          const sourceEvents = assignment.events ?? [];
 
           const eventPositions = sourceEvents.map((ev, index) => ({
             x: xScale(new Date(ev.time)),
@@ -265,7 +232,7 @@ export default function Timeline({
             eventIndex: index,
           }));
 
-          const label = `${assignment.missionNumber} ${shortCallsign(assignment.callsign)}`;
+          const label = `${assignment.missionNumber} ${shortCallsign(assignment.callsign)} ${flightStatus}`;
 
           return (
             <AssignmentWorm

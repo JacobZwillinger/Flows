@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Assignment } from '../types';
+import { shortCallsign } from '../utils/missionUtils';
 
 export function useFilteredAssignments(
   assignments: Assignment[],
@@ -24,8 +25,9 @@ export function useFilteredAssignments(
       // Filter by search query — matches callsign or mission number
       if (trimmedQuery) {
         const matchesCallsign = assignment.callsign.toLowerCase().includes(trimmedQuery);
+        const matchesShortCallsign = shortCallsign(assignment.callsign).toLowerCase().includes(trimmedQuery);
         const matchesMissionNumber = String(assignment.missionNumber).includes(trimmedQuery);
-        if (!matchesCallsign && !matchesMissionNumber) return false;
+        if (!matchesCallsign && !matchesShortCallsign && !matchesMissionNumber) return false;
       }
 
       return true;

@@ -1,7 +1,16 @@
-import { Assignment, Category } from '../types';
+import type { ReactNode } from 'react';
+import { Assignment, Category, Day } from '../types';
 import { shortCallsign, formatFuelLbs } from '../utils/missionUtils';
+import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
+import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
+import {
+  getFlightStatus,
+  getFlightStatusColor,
+  getScenarioReferenceTime,
+} from '../utils/flightStatus';
 
 interface MissionPanelProps {
+  day: Day;
   assignments: Assignment[];
   categories: Category[];
   rowHeight: number;
@@ -13,6 +22,7 @@ interface MissionPanelProps {
 export const PANEL_WIDTH = 220;
 export const PANEL_WIDTH_CELL = 260;
 const CELL_SUBTEXT_SIZE = 13;
+const EVENT_ICON_COLOR = '#D1D5DB';
 
 function getStatusColor(status: string): string {
   switch (status) {
@@ -43,6 +53,14 @@ function FuelBar({ remaining, total }: { remaining: number; total: number }) {
   );
 }
 
+function InlineIcon({ children }: { children: ReactNode }) {
+  return (
+    <span style={{ display: 'inline-flex', verticalAlign: 'text-bottom', marginRight: 4 }}>
+      {children}
+    </span>
+  );
+}
+
 // ── Row cards (cell overview) ─────────────────────────────────────────────────
 function TankerCard({ assignment, allAssignments }: { assignment: Assignment; allAssignments: Assignment[] }) {
   const { totalFuelLbs = 0, remainingFuelLbs = 0 } = assignment;
@@ -51,7 +69,7 @@ function TankerCard({ assignment, allAssignments }: { assignment: Assignment; al
   const receiverCallsigns = receiverEvents
     .map(e => {
       const rec = e.linkedAssignmentId ? allAssignments.find(a => a.assignmentId === e.linkedAssignmentId) : null;
-      return rec ? shortCallsign(rec.callsign) : '?';
+      return rec ? rec.callsign : '?';
     })
     .join(', ');
   const fuelColor = pct > 50 ? '#4ADE80' : pct > 25 ? '#FACC15' : '#EF4444';
@@ -65,7 +83,12 @@ function TankerCard({ assignment, allAssignments }: { assignment: Assignment; al
       </div>
       <div style={{ fontSize: CELL_SUBTEXT_SIZE, marginTop: 1, lineHeight: 1.4 }}>
         {receiverEvents.length > 0
-          ? <span style={{ color: '#666' }}>⬇ {receiverEvents.length}× recv: <span style={{ color: '#888' }}>{receiverCallsigns}</span></span>
+          ? (
+            <span style={{ color: '#666' }}>
+              <InlineIcon><LocalGasStationIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} /></InlineIcon>
+              {receiverEvents.length}x recv: <span style={{ color: '#888' }}>{receiverCallsigns}</span>
+            </span>
+          )
           : <span style={{ color: '#3a3a3a' }}>No receivers</span>
         }
       </div>
@@ -85,12 +108,18 @@ function StrikeCard({ assignment, allAssignments }: { assignment: Assignment; al
   return (
     <div style={{ padding: '2px 10px 4px 12px', display: 'flex', flexDirection: 'column', gap: 0 }}>
       <div style={{ fontSize: CELL_SUBTEXT_SIZE, color: hitColor, marginTop: 2, lineHeight: 1.4, fontWeight: 600 }}>
-        💣 {dmpiHit}/{dmpiTotal} DMPIs
+        <InlineIcon><CrisisAlertIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} /></InlineIcon>
+        {dmpiHit}/{dmpiTotal} DMPIs
         <span style={{ color: '#555', fontWeight: 400, marginLeft: 5 }}>({dmpiTotal - dmpiHit} miss)</span>
       </div>
       <div style={{ fontSize: CELL_SUBTEXT_SIZE, color: '#666', marginTop: 1, lineHeight: 1.4 }}>
         {tanker
-          ? <>⬆ AAR: <span style={{ color: '#888' }}>{shortCallsign(tanker.callsign)}</span></>
+          ? (
+            <>
+              <InlineIcon><LocalGasStationIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} /></InlineIcon>
+              AAR: <span style={{ color: '#888' }}>{tanker.callsign}</span>
+            </>
+          )
           : <span style={{ color: '#3a3a3a' }}>No AAR</span>
         }
       </div>
@@ -112,14 +141,16 @@ function CAPCard({ assignment, allAssignments }: { assignment: Assignment; allAs
   return (
     <div style={{ padding: '2px 10px 4px 12px', display: 'flex', flexDirection: 'column', gap: 0 }}>
       <div style={{ fontSize: CELL_SUBTEXT_SIZE, color: '#88bb88', marginTop: 2, lineHeight: 1.4 }}>
-        ⏱ On-station: <span style={{ fontWeight: 600 }}>{onStationMinutes}m</span>
+        On-station: <span style={{ fontWeight: 600 }}>{onStationMinutes}m</span>
       </div>
       <div style={{ fontSize: CELL_SUBTEXT_SIZE, color: interceptColor, lineHeight: 1.4, marginTop: 1 }}>
-        👁 {interceptsCompleted}/{threatContacts} intercepts
+        <InlineIcon><CrisisAlertIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} /></InlineIcon>
+        {interceptsCompleted}/{threatContacts} intercepts
       </div>
       {tanker && (
         <div style={{ fontSize: CELL_SUBTEXT_SIZE, color: '#666', lineHeight: 1.4, marginTop: 1 }}>
-          ⬆ AAR: <span style={{ color: '#888' }}>{shortCallsign(tanker.callsign)}</span>
+          <InlineIcon><LocalGasStationIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} /></InlineIcon>
+          AAR: <span style={{ color: '#888' }}>{tanker.callsign}</span>
         </div>
       )}
     </div>
@@ -127,6 +158,7 @@ function CAPCard({ assignment, allAssignments }: { assignment: Assignment; allAs
 }
 
 export default function MissionPanel({
+  day,
   assignments,
   categories,
   rowHeight,
@@ -138,6 +170,7 @@ export default function MissionPanel({
     categories.find(c => c.categoryId === categoryId)?.name ?? '?';
 
   const panelWidth = cellOverview ? PANEL_WIDTH_CELL : PANEL_WIDTH;
+  const scenarioReferenceTime = getScenarioReferenceTime(day, assignments);
 
   return (
     <div
@@ -172,8 +205,10 @@ export default function MissionPanel({
       {/* Mission rows */}
       {assignments.map((assignment) => {
         const catName = getCategoryName(assignment.categoryId);
-        const statusColor = getStatusColor(assignment.status);
+        const healthColor = getStatusColor(assignment.status);
         const typeColor = getTypeColor(catName);
+        const flightStatus = getFlightStatus(assignment, scenarioReferenceTime);
+        const flightStatusColor = getFlightStatusColor(flightStatus);
         const sc = shortCallsign(assignment.callsign);
 
         if (cellOverview) {
@@ -193,15 +228,15 @@ export default function MissionPanel({
               }}
             >
               {/* Status stripe */}
-              <div style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 3, backgroundColor: statusColor, borderRadius: '0 2px 2px 0' }} />
+              <div style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 3, backgroundColor: flightStatusColor, borderRadius: '0 2px 2px 0' }} />
 
-              {/* Header row: number + short callsign + type badge */}
+              {/* Header row: number + full callsign + type badge */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px 0 12px' }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#e8e8e8', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                   {assignment.missionNumber}
                 </span>
                 <span style={{ fontSize: 13, color: '#bbb', fontFamily: 'monospace', fontWeight: 600, flexShrink: 0 }}>
-                  {sc}
+                  {assignment.callsign}
                 </span>
                 <span style={{
                   fontSize: 10, fontWeight: 700, color: typeColor,
@@ -210,6 +245,9 @@ export default function MissionPanel({
                 }}>
                   {catName.toUpperCase()}
                 </span>
+              </div>
+              <div style={{ padding: '0 10px 0 12px', fontSize: 12, color: flightStatusColor, fontWeight: 700, lineHeight: 1.3 }}>
+                {flightStatus}
               </div>
 
               {/* Detail section */}
@@ -235,7 +273,7 @@ export default function MissionPanel({
               boxSizing: 'border-box',
             }}
           >
-            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: statusColor, flexShrink: 0 }} />
+            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: healthColor, flexShrink: 0 }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: '#e8e8e8', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
               {assignment.missionNumber}
             </span>

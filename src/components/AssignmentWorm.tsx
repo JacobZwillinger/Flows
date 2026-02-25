@@ -1,4 +1,6 @@
 import React, { useId } from 'react';
+import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
+import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
 import { MissionEventType } from '../types';
 
 export interface EventPosition {
@@ -26,50 +28,56 @@ interface AssignmentWormProps {
   onMouseLeave: () => void;
 }
 
+const EVENT_ICON_COLOR = '#D1D5DB';
+const ICON_HALF = 7;
+
 // ── Icons (centered at cx, cy) ───────────────────────────────────────────────
 
-/** Fuel pump body (pump dispenses downward — tanker offloading) */
-function FuelPumpDown({ cx, cy }: { cx: number; cy: number }) {
+function FuelPumpIcon({ cx, cy }: { cx: number; cy: number }) {
   return (
-    <g style={{ pointerEvents: 'none' }}>
-      {/* pump body */}
-      <rect x={cx - 5} y={cy - 8} width={10} height={9} rx={1.5} fill="#4ADE80" />
-      {/* top display bump */}
-      <rect x={cx - 3} y={cy - 12} width={6} height={4} rx={1} fill="#4ADE80" opacity={0.8} />
-      {/* down-arrow caret */}
-      <polygon points={`${cx - 5},${cy + 2} ${cx + 5},${cy + 2} ${cx},${cy + 9}`} fill="#4ADE80" />
-    </g>
+    <foreignObject
+      x={cx - ICON_HALF}
+      y={cy - ICON_HALF}
+      width={14}
+      height={14}
+      style={{ overflow: 'visible', pointerEvents: 'none' }}
+    >
+      <div
+        style={{
+          width: 14,
+          height: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <LocalGasStationIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} />
+      </div>
+    </foreignObject>
   );
 }
 
-/** Fuel pump (pump receives upward — strike/CAP receiving) */
-function FuelPumpUp({ cx, cy }: { cx: number; cy: number }) {
+function StrikeIcon({ cx, cy }: { cx: number; cy: number }) {
   return (
-    <g style={{ pointerEvents: 'none' }}>
-      {/* up-arrow caret */}
-      <polygon points={`${cx - 5},${cy - 1} ${cx + 5},${cy - 1} ${cx},${cy - 9}`} fill="#FACC15" />
-      {/* pump body */}
-      <rect x={cx - 5} y={cy + 1} width={10} height={9} rx={1.5} fill="#FACC15" />
-      {/* top display bump */}
-      <rect x={cx - 3} y={cy + 10} width={6} height={4} rx={1} fill="#FACC15" opacity={0.8} />
-    </g>
-  );
-}
-
-/** Bomb icon — DMPI */
-function BombIcon({ cx, cy, color = '#EF4444' }: { cx: number; cy: number; color?: string }) {
-  return (
-    <g style={{ pointerEvents: 'none' }}>
-      {/* body */}
-      <ellipse cx={cx} cy={cy + 2} rx={5} ry={7} fill={color} />
-      {/* nose cone */}
-      <polygon points={`${cx},${cy - 10} ${cx - 3},${cy - 5} ${cx + 3},${cy - 5}`} fill={color} />
-      {/* fuse */}
-      <line x1={cx} y1={cy - 10} x2={cx - 3.5} y2={cy - 13} stroke={color} strokeWidth={1.5} />
-      {/* fins */}
-      <polygon points={`${cx - 3.5},${cy + 7} ${cx - 7},${cy + 11} ${cx - 0.5},${cy + 7}`} fill={color} opacity={0.75} />
-      <polygon points={`${cx + 3.5},${cy + 7} ${cx + 7},${cy + 11} ${cx + 0.5},${cy + 7}`} fill={color} opacity={0.75} />
-    </g>
+    <foreignObject
+      x={cx - ICON_HALF}
+      y={cy - ICON_HALF}
+      width={14}
+      height={14}
+      style={{ overflow: 'visible', pointerEvents: 'none' }}
+    >
+      <div
+        style={{
+          width: 14,
+          height: 14,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <CrisisAlertIcon sx={{ fontSize: 14, color: EVENT_ICON_COLOR }} />
+      </div>
+    </foreignObject>
   );
 }
 
@@ -132,9 +140,10 @@ export default function AssignmentWorm({
   const clampX = (v: number) => Math.max(x, Math.min(x + effectiveWidth, v));
 
   // Text clip: leave room before the first point event icon
-  const textPadding = 6;
+  const textPadding = 8;
+  const iconTextClearance = 12;
   const firstPointX = pointEvents.length > 0
-    ? Math.min(...pointEvents.map(e => e.x)) - 9
+    ? Math.min(...pointEvents.map(e => e.x)) - iconTextClearance
     : x + effectiveWidth;
   const textClipEndX = Math.min(firstPointX, x + effectiveWidth - textPadding);
   const textClipWidth = Math.max(0, textClipEndX - (x + textPadding));
@@ -232,7 +241,7 @@ export default function AssignmentWorm({
       {/* ── Refuel + non-strike point events ── */}
       {showEvents && nonStrikePointEvents.map((ev) => {
         const cx2 = ev.x;
-        if (cx2 < x + 6 || cx2 > x + effectiveWidth - 6) return null;
+        if (cx2 < x + ICON_HALF + 4 || cx2 > x + effectiveWidth - ICON_HALF - 4) return null;
         return (
           <g
             key={ev.eventIndex}
@@ -242,10 +251,9 @@ export default function AssignmentWorm({
           >
             {/* Invisible hit area */}
             <rect x={cx2 - 11} y={y} width={22} height={height} fill="transparent" />
-            {ev.type === 'refuel-tanker'
-              ? <FuelPumpDown cx={cx2} cy={cy} />
-              : <FuelPumpUp cx={cx2} cy={cy} />
-            }
+            {ev.type === 'refuel-tanker' || ev.type === 'refuel-receiver'
+              ? <FuelPumpIcon cx={cx2} cy={cy} />
+              : null}
           </g>
         );
       })}
@@ -253,7 +261,7 @@ export default function AssignmentWorm({
       {/* ── DMPI / strike events (grouped by proximity) ── */}
       {showEvents && dmpiGroups.map((group) => {
         const cx2 = group.cx;
-        if (cx2 < x + 6 || cx2 > x + effectiveWidth - 6) return null;
+        if (cx2 < x + ICON_HALF + 4 || cx2 > x + effectiveWidth - ICON_HALF - 4) return null;
         const showBadge = group.totalDmpi > 1;
         return (
           <g
@@ -264,16 +272,16 @@ export default function AssignmentWorm({
           >
             {/* Invisible hit area */}
             <rect x={cx2 - 11} y={y} width={22} height={height} fill="transparent" />
-            <BombIcon cx={cx2} cy={cy} />
+            <StrikeIcon cx={cx2} cy={cy} />
             {showBadge && (
               <>
-                <circle cx={cx2 + 9} cy={cy - 9} r={8} fill="#1a1a1a" stroke="#EF4444" strokeWidth={1.5} style={{ pointerEvents: 'none' }} />
+                <circle cx={cx2 + 9} cy={cy - 9} r={8} fill="#1a1a1a" stroke={EVENT_ICON_COLOR} strokeWidth={1.5} style={{ pointerEvents: 'none' }} />
                 <text
                   x={cx2 + 9}
                   y={cy - 9}
                   textAnchor="middle"
                   dy="0.35em"
-                  fill="#EF4444"
+                  fill={EVENT_ICON_COLOR}
                   fontSize={9}
                   fontWeight={700}
                   style={{ pointerEvents: 'none', userSelect: 'none' }}

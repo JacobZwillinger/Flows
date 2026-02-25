@@ -84,9 +84,7 @@ export default function App() {
             categories={data.categories}
             selectedAssignmentId={selectedAssignmentId}
             onSelectAssignment={setSelectedAssignmentId}
-            previewMode={viewMode === 'preview'}
             cellOverview={viewMode === 'cell'}
-            onExitPreview={() => setViewMode('default')}
           />
         ) : (
           <div style={{ padding: 24, color: '#999' }}>Select a day to view the schedule.</div>

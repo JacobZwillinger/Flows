@@ -1,9 +1,8 @@
 import { Day, Category } from '../types';
 import { Select, MenuItem, TextField, InputLabel, FormControl, Box, Button } from '@mui/material';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import GridViewIcon from '@mui/icons-material/GridView';
 
-export type ViewMode = 'default' | 'preview' | 'cell';
+export type ViewMode = 'default' | 'cell';
 
 interface TopBarProps {
   days: Day[];
@@ -79,15 +78,6 @@ export function TopBar({
           sx={{ whiteSpace: 'nowrap' }}
         >
           Default View
-        </Button>
-        <Button
-          size="small"
-          variant={viewMode === 'preview' ? 'contained' : 'outlined'}
-          startIcon={<VisibilityIcon />}
-          onClick={() => onSetViewMode('preview')}
-          sx={{ whiteSpace: 'nowrap' }}
-        >
-          Day Overview
         </Button>
         <Button
           size="small"

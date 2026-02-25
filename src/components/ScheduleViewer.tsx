@@ -11,9 +11,7 @@ interface ScheduleViewerProps {
   categories: Category[];
   selectedAssignmentId: string | null;
   onSelectAssignment: (id: string | null) => void;
-  previewMode: boolean;
   cellOverview: boolean;
-  onExitPreview: () => void;
 }
 
 const ROW_HEIGHT = 40;
@@ -27,9 +25,7 @@ export default function ScheduleViewer({
   categories,
   selectedAssignmentId,
   onSelectAssignment,
-  previewMode,
   cellOverview,
-  onExitPreview,
 }: ScheduleViewerProps) {
   const [tooltip, setTooltip] = useState<{
     assignmentId: string;
@@ -76,13 +72,7 @@ export default function ScheduleViewer({
     ? assignments.find((a) => a.assignmentId === tooltip.assignmentId) ?? null
     : null;
 
-  const previewRowHeight = assignments.length > 0
-    ? Math.max(1, (viewportHeight - HEADER_HEIGHT) / assignments.length)
-    : 6;
-
-  const effectiveRowHeight = previewMode
-    ? previewRowHeight
-    : cellOverview
+  const effectiveRowHeight = cellOverview
     ? ROW_HEIGHT_CELL
     : ROW_HEIGHT;
 
@@ -100,17 +90,15 @@ export default function ScheduleViewer({
         }}
         onScroll={handleScroll}
       >
-        {/* Left panel — hidden in preview mode */}
-        {!previewMode && (
-          <MissionPanel
-            assignments={assignments}
-            categories={categories}
-            rowHeight={effectiveRowHeight}
-            headerHeight={HEADER_HEIGHT}
-            cellOverview={cellOverview}
-            allAssignments={allAssignments}
-          />
-        )}
+        <MissionPanel
+          assignments={assignments}
+          categories={categories}
+          rowHeight={effectiveRowHeight}
+          headerHeight={HEADER_HEIGHT}
+          cellOverview={cellOverview}
+          allAssignments={allAssignments}
+          day={day}
+        />
 
         {/* Timeline */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -126,8 +114,6 @@ export default function ScheduleViewer({
             onTooltipHide={handleTooltipHide}
             scrollTop={workerScrollOffset}
             viewportHeight={viewportHeight}
-            previewMode={previewMode}
-            onExitPreview={onExitPreview}
           />
         </div>
       </div>
