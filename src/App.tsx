@@ -5,6 +5,7 @@ import ScheduleViewer from './components/ScheduleViewer';
 import { DetailsDrawer } from './components/DetailsDrawer';
 import { useFilteredAssignments } from './hooks/useFilteredAssignments';
 import TankerDashboard from './components/TankerDashboard';
+import C2MockPanel from './components/C2MockPanel';
 
 export default function App() {
   const [data, setData] = useState<MockData | null>(null);
@@ -79,7 +80,9 @@ export default function App() {
 
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {selectedDay ? (
-          viewMode === 'dashboard' ? (
+          viewMode === 'mock' ? (
+            <C2MockPanel />
+          ) : viewMode === 'dashboard' ? (
             <TankerDashboard
               day={selectedDay}
               assignments={data.assignments}
